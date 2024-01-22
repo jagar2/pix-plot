@@ -11,18 +11,22 @@ COPY . .
 RUN conda create -n engr131 python=3.10
 RUN echo "source activate pix" > ~/.bashrc
 ENV PATH /opt/conda/envs/pix/bin:$PATH
-RUN /bin/bash -c "source activate engr131 && pip install --no-cache-dir -r requirements.txt"
+RUN echo "source activate engr131" > ~/.bashrc && \
+    /bin/bash -c "source activate engr131 && conda install nbconvert"
+
+RUN pip install --no-cache-dir -r requirements.txt
+# RUN echo -c "source activate engr131 && pip install --no-cache-dir -r requirements.txt"
 
 
 # Install nbconvert and its dependencies
-RUN /bin/bash -c "source activate pix"
+# RUN /bin/bash -c "source activate pix"
 
 RUN conda install nbconvert
 
 # Make port 80 available to the world outside this container
 EXPOSE 80
 
-RUN rm Dockerfile requirements.txt docker_python_cookbook.md
+#RUN rm Dockerfile requirements.txt docker_python_cookbook.md
 
 # Start with a bash shell
 CMD ["/bin/bash"]
