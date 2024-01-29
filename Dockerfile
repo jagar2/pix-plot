@@ -7,15 +7,15 @@ WORKDIR /usr/src/app
 # Copy the current directory contents into the container at /usr/src/app
 COPY . .
 
-# Create a conda environment named "engr131" and install packages from requirements.txt
-RUN conda create -n engr131 python=3.10
+# Create a conda environment named "pixplot" and install packages from requirements.txt
+RUN conda create -n pixplot python=3.10
 RUN echo "source activate pix" > ~/.bashrc
 ENV PATH /opt/conda/envs/pix/bin:$PATH
-RUN echo "source activate engr131" > ~/.bashrc && \
-    /bin/bash -c "source activate engr131 && conda install nbconvert"
+RUN echo "source activate pixplot" > ~/.bashrc && \
+    /bin/bash -c "source activate pixplot && conda install nbconvert"
 
 RUN pip install --no-cache-dir -r requirements.txt
-# RUN echo -c "source activate engr131 && pip install --no-cache-dir -r requirements.txt"
+# RUN echo -c "source activate pixplot && pip install --no-cache-dir -r requirements.txt"
 
 
 # Install nbconvert and its dependencies
