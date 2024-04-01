@@ -1,33 +1,24 @@
-# Use an official Anaconda image as a parent image
+# Use the official Miniconda image as a parent image
 FROM continuumio/miniconda3
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
 # Copy the current directory contents into the container at /usr/src/app
-COPY . .
+COPY . /usr/src/app
 
-# Create a conda environment named "pixplot" and install packages from requirements.txt
-RUN conda create -n pixplot python=3.10
-RUN echo "source activate pix" > ~/.bashrc
-ENV PATH /opt/conda/envs/pix/bin:$PATH
-RUN echo "source activate pixplot" > ~/.bashrc && \
-    /bin/bash -c "source activate pixplot && conda install nbconvert"
+# Copy your environment file into the container
+COPY environment.yml /usr/src/app/environment.yml
 
-RUN pip install --no-cache-dir -r requirements.txt
-# RUN echo -c "source activate pixplot && pip install --no-cache-dir -r requirements.txt"
+# Create the Conda environment
+RUN conda update -n base -c defaults conda && \
+    conda env create -f environment.yml
+
+# Make the startup script executable
+RUN chmod +x /usr/src/app/startup.sh
+
+# Use the startup script as the entry point
+ENTRYPOINT ["/usr/src/app/startup.sh"]
 
 
-# Install nbconvert and its dependencies
-# RUN /bin/bash -c "source activate pix"
-
-RUN conda install nbconvert
-
-# Make port 80 available to the world outside this container
-EXPOSE 80
-
-#RUN rm Dockerfile requirements.txt docker_python_cookbook.md
-
-# Start with a bash shell
-CMD ["/bin/bash"]
 
