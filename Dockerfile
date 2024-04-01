@@ -14,6 +14,8 @@ COPY environment.yml /usr/src/app/environment.yml
 RUN conda update -n base -c defaults conda && \
     conda env create -f environment.yml
 
+RUN pip install .
+
 # Make the startup script executable
 RUN chmod +x /usr/src/app/startup.sh
 

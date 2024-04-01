@@ -18,3 +18,5 @@ pixplot --images /home/ferroelectric/pix-plot/data/*/*.bmp --cell_size 10
 # for python 3.x
 # open the port
 python -m http.server 7890
+
+docker run -p 5000:5000 -v ./data:/data/ pixplot

@@ -156,3 +156,5 @@ One could then specify these images as input by running `pixplot --images manife
 ## Acknowledgements
 
 The DHLab would like to thank [Cyril Diagne](http://cyrildiagne.com/) and [Nicolas Barradeau](http://barradeau.com), lead developers of the spectacular [Google Arts Experiments TSNE viewer](https://artsexperiments.withgoogle.com/tsnemap/), for generously sharing ideas on optimization techniques used in this viewer, and [Lillianna Marie](https://github.com/lilliannamarie) for naming this viewer PixPlot.
+
+docker run -p 5000:5000 -v ./data/:/home/ferroelectric/pix-plot/data/ pixplot
