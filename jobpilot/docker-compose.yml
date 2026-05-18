@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: jobpilot
       POSTGRES_USER: jobpilot
       POSTGRES_PASSWORD: jobpilot_secret
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -16,19 +14,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+    restart: unless-stopped
 
   api:
     build:
@@ -38,35 +24,15 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://jobpilot:jobpilot_secret@postgres:5432/jobpilot
-      REDIS_URL: redis://redis:6379/0
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-32chars}
+      DEBUG: "false"
     volumes:
-      - ./apps/api:/app
       - resumes_data:/app/resumes
+      - screenshots_data:/app/screenshots
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  worker:
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-    command: celery -A app.worker worker --loglevel=info --concurrency=4
-    environment:
-      DATABASE_URL: postgresql+asyncpg://jobpilot:jobpilot_secret@postgres:5432/jobpilot
-      REDIS_URL: redis://redis:6379/0
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-    volumes:
-      - ./apps/api:/app
-      - resumes_data:/app/resumes
-    depends_on:
-      - api
-      - redis
     restart: unless-stopped
 
   web:
@@ -76,12 +42,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      # Server-side rewrite target (Next.js proxies /api/* -> api:8000)
+      INTERNAL_API_URL: http://api:8000
     depends_on:
       - api
     restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
   resumes_data:
+  screenshots_data:
