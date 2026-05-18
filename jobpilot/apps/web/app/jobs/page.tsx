@@ -60,14 +60,6 @@ export default function JobsPage() {
 
   useEffect(() => { load() }, [load])
 
-  const formatSalary = (min?: number | null, max?: number | null) => {
-    if (!min && !max) return null
-    const fmt = (v: number) => `$${(v / 1000).toFixed(0)}k`
-    if (min && max) return `${fmt(min)}–${fmt(max)}`
-    if (min) return `${fmt(min)}+`
-    return `up to ${fmt(max!)}`
-  }
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -130,7 +122,6 @@ export default function JobsPage() {
                   <th className="px-4 py-3">Company</th>
                   <th className="px-4 py-3">Title</th>
                   <th className="px-4 py-3">Location</th>
-                  <th className="px-4 py-3">Salary</th>
                   <th className="px-4 py-3">Match</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Posted</th>
@@ -140,7 +131,7 @@ export default function JobsPage() {
               <tbody className="divide-y divide-slate-800/60">
                 {(data?.items || []).length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
                       No jobs found. Try adjusting filters or trigger a scan.
                     </td>
                   </tr>
@@ -224,31 +215,31 @@ export default function JobsPage() {
             <div className="flex items-center gap-3">
               {selectedJob.match_score != null && <MatchScore score={selectedJob.match_score} size="lg" />}
               <div>
-                <p className="text-sm text-slate-400">{(selectedJob as any).company?.name}</p>
+                <p className="text-sm text-slate-400">{selectedJob.company_name}</p>
                 <p className="text-xs text-slate-500">{selectedJob.location}</p>
               </div>
             </div>
-            {(selectedJob as any).match_analysis && (
+            {selectedJob.match_analysis && (
               <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 space-y-3">
                 <h3 className="text-sm font-semibold text-slate-300">Match Analysis</h3>
-                {(selectedJob as any).match_analysis.explanation && (
-                  <p className="text-xs text-slate-400">{(selectedJob as any).match_analysis.explanation}</p>
+                {selectedJob.match_analysis.explanation && (
+                  <p className="text-xs text-slate-400">{selectedJob.match_analysis.explanation}</p>
                 )}
-                {(selectedJob as any).match_analysis.strengths?.length > 0 && (
+                {selectedJob.match_analysis.strengths?.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-green-400 mb-1">Strengths</p>
                     <ul className="space-y-0.5">
-                      {(selectedJob as any).match_analysis.strengths.map((s: string, i: number) => (
+                      {selectedJob.match_analysis.strengths.map((s: string, i: number) => (
                         <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-green-500">✓</span>{s}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                {(selectedJob as any).match_analysis.gaps?.length > 0 && (
+                {selectedJob.match_analysis.gaps?.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-yellow-400 mb-1">Gaps</p>
                     <ul className="space-y-0.5">
-                      {(selectedJob as any).match_analysis.gaps.map((g: string, i: number) => (
+                      {selectedJob.match_analysis.gaps.map((g: string, i: number) => (
                         <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-yellow-500">△</span>{g}</li>
                       ))}
                     </ul>
