@@ -102,7 +102,7 @@ async def update_company(
     return company
 
 
-@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_company(company_id: int, db: AsyncSession = Depends(get_db)) -> None:
     company = (
         await db.execute(select(Company).where(Company.id == company_id))
