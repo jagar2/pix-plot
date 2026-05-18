@@ -4,17 +4,6 @@ import { useState } from 'react'
 import { triggerScan } from '@/lib/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
-interface SettingsSection {
-  title: string
-  description: string
-}
-
-const sections: SettingsSection[] = [
-  { title: 'Scanner', description: 'Configure automatic job scanning behavior' },
-  { title: 'Notifications', description: 'Control when and how you get notified' },
-  { title: 'Data & Privacy', description: 'Manage your data and privacy preferences' },
-]
-
 export default function SettingsPage() {
   const [scanInterval, setScanInterval] = useState(60)
   const [maxAppsPerDay, setMaxAppsPerDay] = useState(20)

@@ -137,7 +137,7 @@ export default function ProfilePage() {
                 <input
                   type={type}
                   value={(profile[key] as string) || ''}
-                  onChange={e => set(key, e.target.value || null as any)}
+                  onChange={e => set(key, (e.target.value || null) as Profile[typeof key])}
                   placeholder={placeholder}
                   className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
                 />
@@ -257,7 +257,7 @@ export default function ProfilePage() {
               <input type="range" min={10} max={100} step={5} value={profile.min_match_score}
                 onChange={e => set('min_match_score', Number(e.target.value))}
                 className="w-full accent-blue-500" />
-              <p className="mt-1 text-xs text-slate-500">Jobs below this score won't be queued for application.</p>
+              <p className="mt-1 text-xs text-slate-500">Jobs below this score will not be queued for application.</p>
             </div>
             <div>
               <div className="mb-2 flex justify-between text-xs text-slate-400">
