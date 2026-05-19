@@ -103,8 +103,15 @@ async def run_company_scan(company_id: int, db: AsyncSession) -> dict:
         await db.flush()
         jobs_new += 1
 
-        # Eligibility check
-        if job.apply_url:
+        # Eligibility: known public ATS APIs don't need a Playwright check.
+        # Only run the slow browser check for generic/unknown job pages.
+        known_public_ats = {"greenhouse", "lever", "ashby", "smartrecruiters"}
+        ats_lower = (company.ats_type.value if company.ats_type else "").lower()
+        if ats_lower in known_public_ats:
+            job.is_public_apply = True
+            job.requires_login = False
+            job.has_captcha = False
+        elif job.apply_url:
             try:
                 import httpx
                 async with httpx.AsyncClient(timeout=10) as client:
@@ -113,10 +120,12 @@ async def run_company_scan(company_id: int, db: AsyncSession) -> dict:
                 job.requires_login = eligibility["requires_login"]
                 job.has_captcha = eligibility["has_captcha"]
             except Exception as e:
-                logger.debug("Eligibility check failed: %s", e)
+                logger.debug("Eligibility check failed for %s: %s — assuming public", job.apply_url, e)
+                job.is_public_apply = True
+                job.requires_login = False
 
-        # AI matching
-        if profile and profile.resume_text:
+        # AI matching — works with or without resume_text
+        if profile:
             try:
                 job_dict = {
                     "title": job.title,
@@ -137,7 +146,7 @@ async def run_company_scan(company_id: int, db: AsyncSession) -> dict:
                     "location_city": profile.location_city,
                     "location_state": profile.location_state,
                     "min_salary": profile.min_salary,
-                    "resume_text": profile.resume_text[:3000],
+                    "resume_text": (profile.resume_text or "")[:3000],
                 }
                 match_result = match_job(job_dict, profile_dict)
                 score = match_result.get("score", 0.0)
@@ -167,8 +176,6 @@ async def run_company_scan(company_id: int, db: AsyncSession) -> dict:
                     job.status = JobStatus.LOW_MATCH if score > 0 else JobStatus.NEW
             except Exception as e:
                 logger.error("AI matching failed for job %s: %s", job.id, e)
-        elif not profile:
-            job.status = JobStatus.NEW
 
     company.last_scanned_at = datetime.utcnow()
     company.scan_error_count = 0
