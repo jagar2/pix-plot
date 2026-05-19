@@ -183,11 +183,13 @@ export async function fetchJob(id: number): Promise<Job> {
 
 export async function fetchApplications(params?: {
   status?: string
+  job_id?: number
   page?: number
   page_size?: number
 }): Promise<{ items: Application[]; total: number; pages: number; page: number }> {
   const qs = new URLSearchParams()
   if (params?.status) qs.set('status', params.status)
+  if (params?.job_id !== undefined) qs.set('job_id', String(params.job_id))
   if (params?.page !== undefined) qs.set('page', String(params.page))
   if (params?.page_size !== undefined) qs.set('page_size', String(params.page_size))
   const q = qs.toString()

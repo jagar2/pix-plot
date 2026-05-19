@@ -32,12 +32,11 @@ export default function JobDetailPage() {
     setLoading(true)
     Promise.all([
       fetchJob(jobId),
-      fetchApplications({ page_size: 100 }),
+      fetchApplications({ job_id: jobId, page_size: 1 }),
     ])
       .then(([j, appsRes]) => {
         setJob(j)
-        const match = appsRes.items.find(a => a.job_id === jobId) || null
-        setApplication(match)
+        setApplication(appsRes.items[0] ?? null)
       })
       .catch(e => setError(e instanceof Error ? e.message : 'Failed to load job'))
       .finally(() => setLoading(false))

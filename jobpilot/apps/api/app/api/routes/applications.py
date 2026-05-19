@@ -22,6 +22,7 @@ async def list_applications(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     app_status: Optional[ApplicationStatus] = Query(None, alias="status"),
+    job_id: Optional[int] = Query(None),
     submitted_after: Optional[datetime] = None,
     submitted_before: Optional[datetime] = None,
     db: AsyncSession = Depends(get_db),
@@ -31,6 +32,8 @@ async def list_applications(
     )
     if app_status:
         q = q.where(Application.status == app_status)
+    if job_id is not None:
+        q = q.where(Application.job_id == job_id)
     if submitted_after:
         q = q.where(Application.submitted_at >= submitted_after)
     if submitted_before:
