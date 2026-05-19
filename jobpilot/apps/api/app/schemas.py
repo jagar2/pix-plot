@@ -140,6 +140,7 @@ class CandidateProfileCreate(CandidateProfileBase):
 
 class CandidateProfileUpdate(BaseModel):
     full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[str] = Field(None, max_length=255)
     phone: Optional[str] = Field(None, max_length=64)
     linkedin_url: Optional[str] = Field(None, max_length=512)
     github_url: Optional[str] = Field(None, max_length=512)

@@ -43,7 +43,7 @@ export default function ScanStatus() {
   const [status, setStatus] = useState<ScannerStatus | null>(null)
   const [triggering, setTriggering] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const countdown = useCountdown(status?.next_run_at ?? null)
+  const countdown = useCountdown(status?.next_scan_at ?? null)
 
   const refresh = useCallback(() => {
     fetchScannerStatus().then(setStatus).catch(() => null)
@@ -90,14 +90,14 @@ export default function ScanStatus() {
             </>
           )}
         </div>
-        {!status?.is_scanning && status?.next_run_at && (
+        {!status?.is_scanning && status?.next_scan_at && (
           <div className="text-sm text-slate-400">
             Next scan in: <span className="font-semibold text-blue-400 tabular-nums">{countdown}</span>
           </div>
         )}
-        {status?.last_run_at && (
+        {status?.last_scan_at && (
           <div className="text-xs text-slate-500 hidden lg:block">
-            Last run: {new Date(status.last_run_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            Last run: {new Date(status.last_scan_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
       </div>

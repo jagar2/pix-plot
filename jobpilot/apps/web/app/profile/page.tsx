@@ -8,15 +8,10 @@ const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','
 
 function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
   const [input, setInput] = useState('')
-
   const add = () => {
     const trimmed = input.trim()
-    if (trimmed && !value.includes(trimmed)) {
-      onChange([...value, trimmed])
-      setInput('')
-    }
+    if (trimmed && !value.includes(trimmed)) { onChange([...value, trimmed]); setInput('') }
   }
-
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 flex flex-wrap gap-1.5 min-h-[42px]">
       {value.map(tag => (
@@ -25,28 +20,32 @@ function TagInput({ value, onChange, placeholder }: { value: string[]; onChange:
           <button onClick={() => onChange(value.filter(t => t !== tag))} className="hover:text-red-400 transition-colors">×</button>
         </span>
       ))}
-      <input
-        value={input}
-        onChange={e => setInput(e.target.value)}
+      <input value={input} onChange={e => setInput(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() } }}
-        onBlur={add}
-        placeholder={placeholder}
-        className="flex-1 min-w-24 bg-transparent text-sm text-slate-200 placeholder-slate-600 focus:outline-none"
-      />
+        onBlur={add} placeholder={placeholder}
+        className="flex-1 min-w-24 bg-transparent text-sm text-slate-200 placeholder-slate-600 focus:outline-none" />
     </div>
   )
 }
 
+// UI stores scores as 0–100; backend stores as 0.0–1.0
+const toUI = (v: number) => Math.round(v * 100)
+const toAPI = (v: number) => v / 100
+
 const emptyProfile: Profile = {
-  name: '', email: '', phone: null, linkedin_url: null, github_url: null,
-  portfolio_url: null, city: null, state: null, willing_to_relocate: false,
-  open_to_remote: true, target_roles: [], target_industries: [],
-  excluded_companies: [], min_salary: null, min_match_score: 65,
-  auto_approve_threshold: 85, resume_filename: null, parsed_skills: [],
+  full_name: '', email: '', phone: null, linkedin_url: null, github_url: null,
+  portfolio_url: null, location_city: null, location_state: null,
+  willing_to_relocate: false, open_to_remote: true, target_roles: [],
+  target_industries: [], excluded_companies: [], min_salary: null,
+  min_match_score: 0.65, auto_approve_threshold: 0.85,
+  resume_filename: null, skills: [],
 }
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>(emptyProfile)
+  // UI scores in 0–100 range
+  const [minScore, setMinScore] = useState(65)
+  const [autoScore, setAutoScore] = useState(85)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -56,17 +55,23 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile()
-      .then(p => setProfile({ ...emptyProfile, ...p }))
-      .catch(() => setProfile(emptyProfile))
+      .then(p => {
+        setProfile({ ...emptyProfile, ...p })
+        setMinScore(toUI(p.min_match_score ?? 0.65))
+        setAutoScore(toUI(p.auto_approve_threshold ?? 0.85))
+      })
+      .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
   const handleSave = async () => {
-    setSaving(true)
-    setError(null)
+    setSaving(true); setError(null)
     try {
-      const updated = await updateProfile(profile)
+      const payload = { ...profile, min_match_score: toAPI(minScore), auto_approve_threshold: toAPI(autoScore) }
+      const updated = await updateProfile(payload)
       setProfile({ ...emptyProfile, ...updated })
+      setMinScore(toUI(updated.min_match_score))
+      setAutoScore(toUI(updated.auto_approve_threshold))
       setSaveMsg('Profile saved!')
       setTimeout(() => setSaveMsg(''), 3000)
     } catch (e: unknown) {
@@ -77,15 +82,10 @@ export default function ProfilePage() {
   }
 
   const handleResumeUpload = async (file: File) => {
-    setUploading(true)
-    setError(null)
+    setUploading(true); setError(null)
     try {
       const res = await uploadResume(file)
-      setProfile(p => ({
-        ...p,
-        resume_filename: res.filename,
-        parsed_skills: res.parsed_skills || [],
-      }))
+      setProfile(p => ({ ...p, resume_filename: res.filename, skills: res.parsed_skills || [] }))
       setSaveMsg('Resume uploaded and parsed!')
       setTimeout(() => setSaveMsg(''), 3000)
     } catch (e: unknown) {
@@ -107,11 +107,8 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-white">Candidate Profile</h1>
           <p className="mt-1 text-sm text-slate-400">Your info, resume, and preferences drive job matching and applications.</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
-        >
+        <button onClick={handleSave} disabled={saving}
+          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors">
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
@@ -125,22 +122,19 @@ export default function ProfilePage() {
           <h2 className="mb-4 text-base font-semibold text-white">Personal Info</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {([
-              ['Full Name', 'name', 'text', 'Jane Doe'],
+              ['Full Name', 'full_name', 'text', 'Jane Doe'],
               ['Email', 'email', 'email', 'jane@example.com'],
               ['Phone', 'phone', 'tel', '+1 (555) 000-0000'],
               ['LinkedIn URL', 'linkedin_url', 'url', 'https://linkedin.com/in/...'],
               ['GitHub URL', 'github_url', 'url', 'https://github.com/...'],
               ['Portfolio / Website', 'portfolio_url', 'url', 'https://...'],
             ] as [string, keyof Profile, string, string][]).map(([label, key, type, placeholder]) => (
-              <div key={key}>
+              <div key={String(key)}>
                 <label className="mb-1.5 block text-xs font-medium text-slate-400">{label}</label>
-                <input
-                  type={type}
-                  value={(profile[key] as string) || ''}
+                <input type={type} value={(profile[key] as string) || ''}
                   onChange={e => set(key, (e.target.value || null) as Profile[typeof key])}
                   placeholder={placeholder}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-                />
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
               </div>
             ))}
           </div>
@@ -152,31 +146,28 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">City</label>
-              <input
-                type="text"
-                value={profile.city || ''}
-                onChange={e => set('city', e.target.value || null)}
+              <input type="text" value={profile.location_city || ''}
+                onChange={e => set('location_city', e.target.value || null)}
                 placeholder="San Francisco"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-              />
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">State</label>
-              <select
-                value={profile.state || ''}
-                onChange={e => set('state', e.target.value || null)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
-              >
+              <select value={profile.location_state || ''}
+                onChange={e => set('location_state', e.target.value || null)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 focus:border-blue-500 focus:outline-none">
                 <option value="">Select state...</option>
                 {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={profile.willing_to_relocate} onChange={e => set('willing_to_relocate', e.target.checked)} className="accent-blue-500" />
+              <input type="checkbox" checked={profile.willing_to_relocate}
+                onChange={e => set('willing_to_relocate', e.target.checked)} className="accent-blue-500" />
               <span className="text-sm text-slate-300">Willing to relocate</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={profile.open_to_remote} onChange={e => set('open_to_remote', e.target.checked)} className="accent-blue-500" />
+              <input type="checkbox" checked={profile.open_to_remote}
+                onChange={e => set('open_to_remote', e.target.checked)} className="accent-blue-500" />
               <span className="text-sm text-slate-300">Open to remote</span>
             </label>
           </div>
@@ -200,13 +191,10 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-400">Minimum Salary (annual USD)</label>
-              <input
-                type="number"
-                value={profile.min_salary || ''}
+              <input type="number" value={profile.min_salary || ''}
                 onChange={e => set('min_salary', e.target.value ? Number(e.target.value) : null)}
                 placeholder="80000"
-                className="w-48 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-              />
+                className="w-48 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none" />
             </div>
           </div>
         </section>
@@ -214,12 +202,10 @@ export default function ProfilePage() {
         {/* Resume */}
         <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-6">
           <h2 className="mb-4 text-base font-semibold text-white">Resume</h2>
-          <div
-            className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 px-6 py-10 text-center cursor-pointer hover:border-blue-500/50 transition-colors"
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/30 px-6 py-10 text-center cursor-pointer hover:border-blue-500/50 transition-colors"
             onClick={() => fileRef.current?.click()}
             onDragOver={e => e.preventDefault()}
-            onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleResumeUpload(f) }}
-          >
+            onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleResumeUpload(f) }}>
             {uploading ? (
               <><LoadingSpinner /><p className="mt-2 text-sm text-slate-400">Parsing resume...</p></>
             ) : (
@@ -228,16 +214,17 @@ export default function ProfilePage() {
                 <p className="text-sm font-medium text-slate-300">
                   {profile.resume_filename || 'Drop your resume here or click to upload'}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">PDF or DOCX, max 10MB</p>
+                <p className="mt-1 text-xs text-slate-500">PDF or DOCX, max 5 MB</p>
               </>
             )}
-            <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
+            <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
           </div>
-          {profile.parsed_skills.length > 0 && (
+          {(profile.skills || []).length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-xs font-medium text-slate-400">Parsed Skills</p>
               <div className="flex flex-wrap gap-1.5">
-                {profile.parsed_skills.map(skill => (
+                {(profile.skills || []).map(skill => (
                   <span key={skill} className="rounded-full bg-slate-700/60 px-2 py-0.5 text-xs text-slate-300">{skill}</span>
                 ))}
               </div>
@@ -252,20 +239,20 @@ export default function ProfilePage() {
             <div>
               <div className="mb-2 flex justify-between text-xs text-slate-400">
                 <label>Minimum Match Score</label>
-                <span className="font-medium text-white">{profile.min_match_score}%</span>
+                <span className="font-medium text-white">{minScore}%</span>
               </div>
-              <input type="range" min={10} max={100} step={5} value={profile.min_match_score}
-                onChange={e => set('min_match_score', Number(e.target.value))}
+              <input type="range" min={10} max={100} step={5} value={minScore}
+                onChange={e => setMinScore(Number(e.target.value))}
                 className="w-full accent-blue-500" />
               <p className="mt-1 text-xs text-slate-500">Jobs below this score will not be queued for application.</p>
             </div>
             <div>
               <div className="mb-2 flex justify-between text-xs text-slate-400">
                 <label>Auto-Approve Threshold</label>
-                <span className="font-medium text-white">{profile.auto_approve_threshold}%</span>
+                <span className="font-medium text-white">{autoScore}%</span>
               </div>
-              <input type="range" min={profile.min_match_score} max={100} step={5} value={profile.auto_approve_threshold}
-                onChange={e => set('auto_approve_threshold', Number(e.target.value))}
+              <input type="range" min={minScore} max={100} step={5} value={autoScore}
+                onChange={e => setAutoScore(Number(e.target.value))}
                 className="w-full accent-green-500" />
               <p className="mt-1 text-xs text-slate-500">Applications above this score are auto-approved without manual review.</p>
             </div>
@@ -274,11 +261,8 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-6 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors"
-        >
+        <button onClick={handleSave} disabled={saving}
+          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors">
           {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </div>

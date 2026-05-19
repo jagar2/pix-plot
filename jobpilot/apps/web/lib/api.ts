@@ -18,14 +18,25 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface DashboardStats {
-  total_jobs_found: number
+  total_companies: number
+  active_companies: number
+  total_jobs: number
   jobs_matched: number
+  total_applications: number
   pending_review: number
   applications_submitted: number
   success_rate: number
-  recent_activity: ActivityItem[]
-  top_matching_jobs: Job[]
-  next_scan_at: string | null
+  avg_match_score: number | null
+  applications_today: number
+  scanner: ScannerStatus
+  top_matching_jobs: Array<{
+    id: number
+    title: string
+    company_id: number
+    match_score: number | null
+    status: string
+    apply_url: string
+  }>
 }
 
 export interface ActivityItem {
@@ -92,30 +103,31 @@ export interface Company {
 
 export interface Profile {
   id?: number
-  name: string
+  full_name: string
   email: string
   phone: string | null
   linkedin_url: string | null
   github_url: string | null
   portfolio_url: string | null
-  city: string | null
-  state: string | null
+  location_city: string | null
+  location_state: string | null
   willing_to_relocate: boolean
   open_to_remote: boolean
   target_roles: string[]
   target_industries: string[]
   excluded_companies: string[]
   min_salary: number | null
+  // stored as 0.0–1.0 on backend; UI shows/inputs as 0–100
   min_match_score: number
   auto_approve_threshold: number
   resume_filename: string | null
-  parsed_skills: string[]
+  skills: string[]
 }
 
 export interface ScannerStatus {
   is_scanning: boolean
-  next_run_at: string | null
-  last_run_at: string | null
+  next_scan_at: string | null
+  last_scan_at: string | null
 }
 
 // ── API Functions ──────────────────────────────────────────────────────────
