@@ -47,27 +47,34 @@ export interface ActivityItem {
   changed_at: string
 }
 
-export interface Job {
+export interface CompanyBrief {
   id: number
-  title: string
-  company_name: string
-  company_id: number
-  location: string | null
-  is_remote: boolean
-  match_score: number | null
-  posted_at: string | null
-  status: string
-  job_url: string
-  description?: string
-  match_analysis?: MatchAnalysis
-  cover_letter?: string
+  name: string
+  domain: string
+  ats_type: string | null
 }
 
-export interface MatchAnalysis {
-  score: number
-  strengths: string[]
-  gaps: string[]
-  explanation: string
+export interface Job {
+  id: number
+  company_id: number
+  external_id: string
+  title: string
+  department: string | null
+  location: string | null
+  remote_type: string | null
+  description: string | null
+  requirements: string | null
+  salary_min: number | null
+  salary_max: number | null
+  apply_url: string
+  is_public_apply: boolean
+  requires_login: boolean
+  has_captcha: boolean
+  match_score: number | null
+  status: string
+  first_seen_at: string
+  posted_at: string | null
+  company: CompanyBrief | null
 }
 
 export interface JobsResponse {
@@ -75,19 +82,22 @@ export interface JobsResponse {
   total: number
   page: number
   page_size: number
-  total_pages: number
+  pages: number
 }
 
 export interface Application {
   id: number
   job_id: number
-  job_title: string
-  company_name: string
-  match_score: number | null
   status: string
   cover_letter: string | null
+  tailored_resume_notes: string | null
+  match_explanation: string | null
+  answers: Record<string, string> | null
   submitted_at: string | null
+  error_message: string | null
   created_at: string
+  updated_at: string
+  job: Job | null
 }
 
 export interface Company {
@@ -171,9 +181,19 @@ export async function fetchJob(id: number): Promise<Job> {
   return request<Job>(`/jobs/${id}`)
 }
 
-export async function fetchApplications(status?: string): Promise<Application[]> {
-  const q = status ? `?status=${status}` : ''
-  return request<Application[]>(`/applications${q}`)
+export async function fetchApplications(params?: {
+  status?: string
+  page?: number
+  page_size?: number
+}): Promise<{ items: Application[]; total: number; pages: number; page: number }> {
+  const qs = new URLSearchParams()
+  if (params?.status) qs.set('status', params.status)
+  if (params?.page !== undefined) qs.set('page', String(params.page))
+  if (params?.page_size !== undefined) qs.set('page_size', String(params.page_size))
+  const q = qs.toString()
+  return request<{ items: Application[]; total: number; pages: number; page: number }>(
+    `/applications${q ? `?${q}` : ''}`
+  )
 }
 
 export async function approveApplication(id: number): Promise<Application> {

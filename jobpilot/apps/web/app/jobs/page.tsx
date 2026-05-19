@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { fetchJobs, type Job, type JobsResponse } from '@/lib/api'
-import MatchScore from '@/components/ui/MatchScore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Modal from '@/components/ui/Modal'
 
@@ -142,21 +141,18 @@ export default function JobsPage() {
                     onClick={() => setSelectedJob(job)}
                   >
                     <td className="px-4 py-3 font-medium text-slate-300">
-                      {job.company_name || '—'}
+                      {job.company?.name || '—'}
                     </td>
                     <td className="px-4 py-3 text-white font-medium max-w-xs truncate">{job.title}</td>
                     <td className="px-4 py-3 text-slate-400">
                       {job.location || '—'}
-                      {job.is_remote && (
+                      {job.remote_type === 'remote' && (
                         <span className="ml-1.5 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-xs text-emerald-400">Remote</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">
-                      —
-                    </td>
                     <td className="px-4 py-3">
                       {job.match_score != null
-                        ? <MatchScore score={job.match_score} size="sm" />
+                        ? <span className="font-semibold text-green-400">{Math.round(job.match_score * 100)}%</span>
                         : <span className="text-slate-600 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3">
@@ -169,7 +165,7 @@ export default function JobsPage() {
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <a
-                        href={job.job_url}
+                        href={job.apply_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
@@ -184,9 +180,9 @@ export default function JobsPage() {
           </div>
 
           {/* Pagination */}
-          {data && data.total_pages > 1 && (
+          {data && data.pages > 1 && (
             <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
-              <span>Page {data.page} of {data.total_pages}</span>
+              <span>Page {data.page} of {data.pages}</span>
               <div className="flex gap-2">
                 <button
                   disabled={data.page <= 1}
@@ -196,7 +192,7 @@ export default function JobsPage() {
                   Previous
                 </button>
                 <button
-                  disabled={data.page >= data.total_pages}
+                  disabled={data.page >= data.pages}
                   onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))}
                   className="rounded-md border border-slate-700 px-3 py-1.5 text-xs disabled:opacity-40 hover:border-slate-600 transition-colors"
                 >
@@ -213,48 +209,36 @@ export default function JobsPage() {
         {selectedJob && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              {selectedJob.match_score != null && <MatchScore score={selectedJob.match_score} size="lg" />}
+              {selectedJob.match_score != null && (
+                <span className="text-3xl font-bold text-green-400">{Math.round(selectedJob.match_score * 100)}%</span>
+              )}
               <div>
-                <p className="text-sm text-slate-400">{selectedJob.company_name}</p>
-                <p className="text-xs text-slate-500">{selectedJob.location}</p>
+                <p className="text-sm font-medium text-slate-300">{selectedJob.company?.name || '—'}</p>
+                <p className="text-xs text-slate-500">{selectedJob.location}{selectedJob.remote_type === 'remote' ? ' · Remote' : ''}</p>
               </div>
             </div>
-            {selectedJob.match_analysis && (
-              <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-300">Match Analysis</h3>
-                {selectedJob.match_analysis.explanation && (
-                  <p className="text-xs text-slate-400">{selectedJob.match_analysis.explanation}</p>
-                )}
-                {selectedJob.match_analysis.strengths?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-green-400 mb-1">Strengths</p>
-                    <ul className="space-y-0.5">
-                      {selectedJob.match_analysis.strengths.map((s: string, i: number) => (
-                        <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-green-500">✓</span>{s}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {selectedJob.match_analysis.gaps?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-yellow-400 mb-1">Gaps</p>
-                    <ul className="space-y-0.5">
-                      {selectedJob.match_analysis.gaps.map((g: string, i: number) => (
-                        <li key={i} className="text-xs text-slate-400 flex gap-1.5"><span className="text-yellow-500">△</span>{g}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+            {selectedJob.requirements && (
+              <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Requirements</h3>
+                <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{selectedJob.requirements}</p>
               </div>
             )}
             {selectedJob.description && (
               <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800/30 p-4">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Description</h3>
                 <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{selectedJob.description}</p>
               </div>
             )}
+            {(selectedJob.salary_min || selectedJob.salary_max) && (
+              <p className="text-xs text-slate-400">
+                Salary: {selectedJob.salary_min ? `$${selectedJob.salary_min.toLocaleString()}` : ''}
+                {selectedJob.salary_min && selectedJob.salary_max ? ' – ' : ''}
+                {selectedJob.salary_max ? `$${selectedJob.salary_max.toLocaleString()}` : ''}
+              </p>
+            )}
             <div className="flex gap-3 pt-2">
               <a
-                href={selectedJob.job_url}
+                href={selectedJob.apply_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 rounded-lg bg-blue-600 py-2 text-center text-sm font-medium text-white hover:bg-blue-500 transition-colors"

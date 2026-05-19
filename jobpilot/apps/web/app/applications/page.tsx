@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { fetchApplications, approveApplication, rejectApplication, type Application } from '@/lib/api'
-import MatchScore from '@/components/ui/MatchScore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 const TABS = [
@@ -34,8 +33,8 @@ export default function ApplicationsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetchApplications(activeTab || undefined)
-      setApps(Array.isArray(res) ? res : ((res as { items?: Application[] }).items || []))
+      const res = await fetchApplications({ status: activeTab || undefined, page_size: 50 })
+      setApps(res.items)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load applications')
     } finally {
@@ -112,8 +111,8 @@ export default function ApplicationsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="font-semibold text-white truncate">{app.job_title}</h2>
-                    <span className="text-slate-400 text-sm">{app.company_name}</span>
+                    <h2 className="font-semibold text-white truncate">{app.job?.title || `Job #${app.job_id}`}</h2>
+                    <span className="text-slate-400 text-sm">{app.job?.company?.name || '—'}</span>
                     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[app.status] || STATUS_COLORS.pending_review}`}>
                       {app.status.replace(/_/g, ' ')}
                     </span>
@@ -121,7 +120,9 @@ export default function ApplicationsPage() {
                   <div className="mt-1 flex items-center gap-4 text-xs text-slate-500">
                     <span>Created {new Date(app.created_at).toLocaleDateString()}</span>
                     {app.submitted_at && <span>Submitted {new Date(app.submitted_at).toLocaleDateString()}</span>}
-                    {app.match_score != null && <MatchScore score={app.match_score} size="sm" />}
+                    {app.job?.match_score != null && (
+                      <span className="font-medium text-green-400">{Math.round(app.job.match_score * 100)}%</span>
+                    )}
                   </div>
                 </div>
 
