@@ -65,7 +65,7 @@ class FormField:
 
 @dataclass
 class ApplicationResult:
-    success: bool
+    success: bool = False
     job_id: Optional[int] = None
     apply_url: str = ""
     screenshot_path: Optional[str] = None
@@ -389,13 +389,17 @@ async def submit_application(
     result = ApplicationResult(job_id=job_id, apply_url=apply_url)
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
+        browser = await pw.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        )
         context = await browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/124.0.0.0 Safari/537.36"
-            )
+            ),
+            ignore_https_errors=True,
         )
         page = await context.new_page()
 

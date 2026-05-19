@@ -99,8 +99,30 @@ async def approve_application(
     application_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> Application:
-    """Approve an application — triggers submission."""
+    """Approve an application — immediately queues it for submission."""
     return await _decide(application_id, approved=True, reason=None, db=db)
+
+
+@router.post("/{application_id}/retry", response_model=dict)
+async def retry_application(
+    application_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Re-queue a FAILED application for submission."""
+    app = (await db.execute(select(Application).where(Application.id == application_id))).scalar_one_or_none()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if app.status != ApplicationStatus.FAILED:
+        raise HTTPException(status_code=409, detail="Only FAILED applications can be retried")
+    app.status = ApplicationStatus.APPROVED
+    app.error_message = None
+    app.updated_at = datetime.utcnow()
+    await db.commit()
+
+    import asyncio
+    from app.services.submission_worker import submit_one
+    asyncio.get_event_loop().create_task(submit_one(application_id))
+    return {"message": "Queued for retry", "application_id": application_id}
 
 
 @router.post("/{application_id}/reject", response_model=ApplicationRead)
@@ -137,17 +159,10 @@ async def decide_application(
 
     if body.approved:
         app.status = ApplicationStatus.APPROVED
-        # Trigger async submission task
-        try:
-            from app.tasks import submit_application_task
-            submit_application_task.delay(application_id)
-        except Exception:
-            pass  # Celery may not be running; submission will happen via scheduler
     else:
         app.status = ApplicationStatus.REJECTED_BY_USER
         if body.reason:
             app.error_message = f"Rejected by user: {body.reason}"
-        # Mark the associated job as skipped
         if app.job:
             app.job.status = JobStatus.SKIPPED
 
@@ -172,11 +187,6 @@ async def _decide(application_id: int, approved: bool, reason: Optional[str], db
         raise HTTPException(status_code=409, detail=f"Cannot decide on application in status '{app.status}'")
     if approved:
         app.status = ApplicationStatus.APPROVED
-        try:
-            from app.tasks import submit_application_task
-            submit_application_task.delay(application_id)
-        except Exception:
-            pass
     else:
         app.status = ApplicationStatus.REJECTED_BY_USER
         if reason:
@@ -186,6 +196,13 @@ async def _decide(application_id: int, approved: bool, reason: Optional[str], db
     app.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(app)
+
+    # Fire-and-forget: kick off submission immediately after approval
+    if approved:
+        import asyncio
+        from app.services.submission_worker import submit_one
+        asyncio.get_event_loop().create_task(submit_one(application_id))
+
     return app
 
 

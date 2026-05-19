@@ -2,6 +2,11 @@
 from __future__ import annotations
 
 import logging
+import os
+
+# Must be set before playwright is imported anywhere
+from app.config import settings
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", settings.playwright_browsers_path)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,15 +58,27 @@ async def startup():
             n = await seed_companies(db)
             logger.info("Seeded %d companies", n)
 
-    # Hourly scanner
+    # Hourly job scanner
     _scheduler.add_job(
         _run_scan,
         trigger=IntervalTrigger(minutes=settings.scan_interval_minutes),
         id="hourly_scan",
         replace_existing=True,
     )
+
+    # Every 5 minutes: submit any APPROVED applications
+    _scheduler.add_job(
+        _run_submissions,
+        trigger=IntervalTrigger(minutes=5),
+        id="submission_loop",
+        replace_existing=True,
+    )
+
     _scheduler.start()
-    logger.info("Scheduler started; scan interval=%d min", settings.scan_interval_minutes)
+    logger.info(
+        "Scheduler started — scan every %d min, submissions every 5 min",
+        settings.scan_interval_minutes,
+    )
 
 
 @app.on_event("shutdown")
@@ -76,6 +93,16 @@ async def _run_scan():
         logger.info("Scheduled scan complete: %s", result)
     except Exception as e:
         logger.error("Scheduled scan error: %s", e)
+
+
+async def _run_submissions():
+    from app.services.submission_worker import process_approved_queue
+    try:
+        result = await process_approved_queue()
+        if result["processed"] > 0:
+            logger.info("Submission loop: %s", result)
+    except Exception as e:
+        logger.error("Submission loop error: %s", e)
 
 
 @app.get("/health")

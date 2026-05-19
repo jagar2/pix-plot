@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     respect_robots_txt: bool = True
     request_delay_seconds: float = 2.0
     max_applications_per_day: int = 50
+    playwright_browsers_path: str = "/opt/pw-browsers"
 
     class Config:
         env_file = ".env"
