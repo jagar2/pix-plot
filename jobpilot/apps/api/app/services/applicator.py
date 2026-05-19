@@ -260,7 +260,7 @@ async def fill_and_submit(
     answers: dict[str, str],
     resume_path: Optional[str] = None,
     dry_run: bool = True,
-) -> bool:
+) -> tuple[bool, Optional[str]]:
     """Fill detected form fields and optionally submit the form.
 
     Args:
@@ -272,7 +272,7 @@ async def fill_and_submit(
         dry_run: When True, fills fields but does not click Submit.
 
     Returns:
-        True if filling (and submission) succeeded without errors.
+        Tuple of (success, error_message).
     """
     try:
         for ff in form_fields:
@@ -300,7 +300,6 @@ async def fill_and_submit(
                         await el.fill(str(answer))
                 elif ff.field_type == "select":
                     if ff.options:
-                        # Find best matching option
                         ans_lower = str(answer).lower()
                         best_option = ff.options[0]
                         for opt in ff.options:
@@ -318,29 +317,56 @@ async def fill_and_submit(
                 continue
 
         if not dry_run:
-            # Find and click the submit button
             submit_selectors = [
                 'button[type="submit"]',
                 'input[type="submit"]',
+                # Text-based matches covering common ATS wording
+                'button:has-text("Submit Application")',
+                'button:has-text("Submit application")',
                 'button:has-text("Submit")',
+                'button:has-text("Apply Now")',
+                'button:has-text("Apply now")',
+                'button:has-text("Apply for this job")',
+                'button:has-text("Apply for this position")',
                 'button:has-text("Apply")',
                 'button:has-text("Send Application")',
+                'button:has-text("Send application")',
+                'button:has-text("Complete Application")',
+                'button:has-text("Continue")',
+                # Data-attribute selectors used by common ATS platforms
+                '[data-qa="btn-submit"]',
+                '[data-testid="submit-application-button"]',
+                '[data-testid="apply-button"]',
+                'a[role="button"]:has-text("Apply")',
             ]
             for sel in submit_selectors:
                 try:
                     btn = await page.query_selector(sel)
-                    if btn:
+                    if btn and await btn.is_visible():
                         await btn.click()
-                        await page.wait_for_load_state("networkidle", timeout=10000)
-                        return True
+                        await page.wait_for_load_state("networkidle", timeout=15000)
+                        return True, None
                 except Exception:
                     continue
-            logger.warning("No submit button found")
-            return False
-        return True
+            # Last resort: any visible button containing "apply" or "submit" in its text
+            try:
+                btns = await page.query_selector_all("button, input[type=submit], a[role=button]")
+                for btn in btns:
+                    txt = (await btn.inner_text()).strip().lower()
+                    if any(kw in txt for kw in ("apply", "submit", "send")):
+                        if await btn.is_visible():
+                            await btn.click()
+                            await page.wait_for_load_state("networkidle", timeout=15000)
+                            return True, None
+            except Exception:
+                pass
+            msg = "No submit button found on the application page"
+            logger.warning(msg)
+            return False, msg
+        return True, None
     except Exception as exc:
         logger.error("fill_and_submit error: %s", exc)
-        return False
+        return False, str(exc)
 
 
 async def take_screenshot_evidence(page: Any, job_id: int, label: str = "submitted") -> str:
@@ -450,7 +476,7 @@ async def submit_application(
                         enriched_answers[ff.label] = cover_letter
                         enriched_answers[ff.name] = cover_letter
 
-            success = await fill_and_submit(
+            success, fill_error = await fill_and_submit(
                 page,
                 form_fields,
                 profile,
@@ -459,11 +485,13 @@ async def submit_application(
                 dry_run=dry_run,
             )
 
-            label = "filled" if dry_run else "submitted"
+            label = "filled" if dry_run else ("submitted" if success else "error")
             result.screenshot_path = await take_screenshot_evidence(
                 page, job_id or 0, label
             )
             result.success = success
+            if not success and fill_error:
+                result.error_message = fill_error
             if success and not dry_run:
                 result.submitted_at = datetime.utcnow()
 
