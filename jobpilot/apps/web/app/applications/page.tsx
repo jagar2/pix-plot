@@ -118,8 +118,8 @@ export default function ApplicationsPage() {
                     </span>
                   </div>
                   <div className="mt-1 flex items-center gap-4 text-xs text-slate-500">
-                    <span>Created {new Date(app.created_at).toLocaleDateString()}</span>
-                    {app.submitted_at && <span>Submitted {new Date(app.submitted_at).toLocaleDateString()}</span>}
+                    <span>Created {new Date(app.created_at).toLocaleDateString('en-US')}</span>
+                    {app.submitted_at && <span>Submitted {new Date(app.submitted_at).toLocaleDateString('en-US')}</span>}
                     {app.job?.match_score != null && (
                       <span className="font-medium text-green-400">{Math.round(app.job.match_score * 100)}%</span>
                     )}

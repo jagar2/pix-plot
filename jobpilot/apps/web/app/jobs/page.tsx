@@ -161,7 +161,7 @@ export default function JobsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
-                      {job.posted_at ? new Date(job.posted_at).toLocaleDateString() : '—'}
+                      {job.posted_at ? new Date(job.posted_at).toLocaleDateString('en-US') : '—'}
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <a
