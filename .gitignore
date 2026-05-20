@@ -1,4 +1,6 @@
 *.DS_Store
+jobpilot.db
+jobpilot/apps/api/jobpilot.db
 *.pyc
 *.swp
 *.pem

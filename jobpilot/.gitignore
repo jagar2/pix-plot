@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+apps/api/jobpilot.db
+apps/api/resumes/
+apps/api/screenshots/
+apps/api/.env
+
+# Node
+apps/web/node_modules/
+apps/web/.next/
+apps/web/.env.local
+
+# General
+.DS_Store
+*.log
