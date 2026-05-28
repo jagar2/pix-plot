@@ -34,7 +34,12 @@ async function fillApplication(tailored) {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'GET_JOB_INFO') {
-    sendResponse(extractJobInfo());
+    const authFormType = ja.detectAuthForm();
+    sendResponse({ ...extractJobInfo(), authFormType });
+    return true;
+  }
+  if (msg.type === 'FILL_AUTH_FORM' || msg.type === 'CREATE_ACCOUNT') {
+    ja.fillAuthForm(msg.formType || 'register').then(ok => sendResponse({ ok }));
     return true;
   }
   if (msg.type === 'FILL_FORM') {

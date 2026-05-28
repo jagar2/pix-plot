@@ -1,6 +1,110 @@
-// Indeed content script — job extraction + Easy Apply form filling.
+// Indeed content script — job extraction, account creation/login, Easy Apply.
 
 const ja = window.__jobAgent;
+
+// ─── Auth detection ───────────────────────────────────────────────────────────
+
+function isLoggedIn() {
+  return !!(
+    document.querySelector(
+      '[data-testid="user-account-link"], .gnav-LoggedInLinks, a[href*="/account/logout"], [aria-label*="account menu" i]'
+    )
+  );
+}
+
+function isOnLoginPage() {
+  return window.location.pathname.includes('/account/Login') ||
+    window.location.pathname.includes('/account/login');
+}
+
+function isOnRegisterPage() {
+  return window.location.pathname.includes('/account/Register') ||
+    window.location.pathname.includes('/account/register') ||
+    !!document.querySelector('input[name="confirmPassword"], input[id*="confirmPassword"]');
+}
+
+// ─── Account creation + login ─────────────────────────────────────────────────
+
+async function createIndeedAccount() {
+  const data = await new Promise(res =>
+    chrome.storage.local.get(['profile', 'accountPassword'], d => res(d))
+  );
+  const profile = data.profile || {};
+  const password = data.accountPassword || '';
+
+  if (!profile.email || !password) {
+    ja.showOverlay('Set your email and account password in Options first.', 'error');
+    return false;
+  }
+
+  // If already on login page, click "Create account" link
+  if (isOnLoginPage()) {
+    const createLink = document.querySelector(
+      'a[href*="register" i], a[href*="signup" i], button:not([type="submit"]):not([type="button"])'
+    );
+    const linkByText = [...document.querySelectorAll('a, button')].find(
+      el => /create.*(account|one)|sign.?up|register/i.test(el.textContent)
+    );
+    if (createLink || linkByText) {
+      (createLink || linkByText).click();
+      await sleep(1500);
+    }
+  }
+
+  // Fill registration form
+  const filled = await ja.fillAuthForm('register');
+  if (!filled) {
+    ja.showOverlay('Could not find registration fields on this page.', 'error');
+    return false;
+  }
+
+  ja.showOverlay('Registration filled — check fields, then submit. Verify your email when it arrives.');
+  return true;
+}
+
+async function loginToIndeed() {
+  const data = await new Promise(res =>
+    chrome.storage.local.get(['profile', 'accountPassword'], d => res(d))
+  );
+  const profile = data.profile || {};
+  const password = data.accountPassword || '';
+
+  if (!profile.email || !password) {
+    ja.showOverlay('Set your email and account password in Options first.', 'error');
+    return false;
+  }
+
+  if (!isOnLoginPage()) {
+    window.location.href = 'https://www.indeed.com/account/Login';
+    return false;
+  }
+
+  const filled = await ja.fillAuthForm('login');
+  if (!filled) {
+    ja.showOverlay('Could not find login fields.', 'error');
+    return false;
+  }
+
+  ja.showOverlay('Login filled — click Sign in to continue.');
+  return true;
+}
+
+// Auto-fill when landing on the Indeed login/register page from the extension
+(async () => {
+  if (!isOnLoginPage() && !isOnRegisterPage()) return;
+
+  const { pendingIndeedAuth } = await new Promise(res =>
+    chrome.storage.session.get('pendingIndeedAuth', d => res(d))
+  );
+  if (!pendingIndeedAuth) return;
+
+  await sleep(800);
+  if (isOnRegisterPage()) {
+    await createIndeedAccount();
+  } else {
+    await loginToIndeed();
+  }
+})();
 
 // ─── Job info extraction ──────────────────────────────────────────────────────
 
@@ -99,13 +203,21 @@ async function fillEasyApply(tailored) {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'GET_JOB_INFO') {
-    sendResponse(extractJobInfo());
+    sendResponse({ ...extractJobInfo(), loggedIn: isLoggedIn() });
     return true;
   }
   if (msg.type === 'FILL_FORM') {
     fillEasyApply(msg.tailored)
       .then(() => sendResponse({ ok: true }))
       .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+  if (msg.type === 'CREATE_INDEED_ACCOUNT') {
+    createIndeedAccount().then(ok => sendResponse({ ok }));
+    return true;
+  }
+  if (msg.type === 'LOGIN_INDEED') {
+    loginToIndeed().then(ok => sendResponse({ ok }));
     return true;
   }
 });

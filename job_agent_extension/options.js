@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadSettings() {
   const data = await chrome.storage.local.get([
-    'profile', 'resumeText', 'coverLetterTemplate', 'anthropicApiKey',
+    'profile', 'resumeText', 'coverLetterTemplate', 'anthropicApiKey', 'accountPassword',
   ]);
 
   const p = data.profile || {};
@@ -24,6 +24,7 @@ async function loadSettings() {
   document.getElementById('resumeText').value = data.resumeText || '';
   document.getElementById('coverText').value = data.coverLetterTemplate || '';
   document.getElementById('apiKey').value = data.anthropicApiKey || '';
+  document.getElementById('accountPassword').value = data.accountPassword || '';
 }
 
 async function saveSettings() {
@@ -42,6 +43,7 @@ async function saveSettings() {
     resumeText: document.getElementById('resumeText').value,
     coverLetterTemplate: document.getElementById('coverText').value,
     anthropicApiKey: document.getElementById('apiKey').value.trim(),
+    accountPassword: document.getElementById('accountPassword').value,
   });
 
   const status = document.getElementById('saveStatus');

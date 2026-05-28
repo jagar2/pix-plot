@@ -1,6 +1,6 @@
 // Popup state machine for the Job Application Agent extension.
 
-const STATES = ['Idle', 'Paste', 'Detected', 'Tailoring', 'Ready', 'Done', 'Error'];
+const STATES = ['Idle', 'Paste', 'Detected', 'NeedsAuth', 'Tailoring', 'Ready', 'Done', 'Error'];
 const pane = id => document.getElementById(`state${id}`);
 
 let currentJob = null;
@@ -43,17 +43,44 @@ async function detectCurrentPage() {
   // Ask content script for job info
   try {
     const jobInfo = await chrome.tabs.sendMessage(tab.id, { type: 'GET_JOB_INFO' });
-    if (jobInfo?.title) {
-      currentJob = { ...jobInfo, tabId: tab.id };
-      renderDetectedState(jobInfo);
-      showState('Detected');
-    } else {
-      showState('Idle');
+    if (!jobInfo?.title) { showState('Idle'); return; }
+
+    currentJob = { ...jobInfo, tabId: tab.id };
+
+    // Check if this is an auth/registration form (any platform)
+    if (jobInfo.authFormType) {
+      showAuthPrompt(jobInfo.authFormType, tab.id, jobInfo.platform || 'this site');
+      return;
     }
+
+    // Indeed Easy Apply requires login
+    if (jobInfo.isEasyApply && jobInfo.loggedIn === false) {
+      showAuthPrompt('register', tab.id, 'Indeed');
+      return;
+    }
+
+    renderDetectedState(jobInfo);
+    showState('Detected');
   } catch {
-    // Content script not ready yet or page doesn't match — show idle
     showState('Idle');
   }
+}
+
+// ─── Auth prompt ─────────────────────────────────────────────────────────────
+
+function showAuthPrompt(formType, tabId, platformName) {
+  const isRegister = formType === 'register';
+  document.getElementById('authPrompt').textContent =
+    isRegister
+      ? `${platformName} requires an account to apply. The extension can create one for you automatically.`
+      : `${platformName} requires you to sign in before applying. The extension can fill your credentials.`;
+
+  document.getElementById('createAccountBtn').style.display = isRegister ? '' : 'none';
+  document.getElementById('loginBtn').textContent = isRegister ? 'Sign In (already have one)' : 'Sign In';
+
+  // Store which tab + platform needs auth
+  currentJob = { ...(currentJob || {}), authTabId: tabId, authPlatform: platformName, authFormType: formType };
+  showState('NeedsAuth');
 }
 
 // ─── State renders ────────────────────────────────────────────────────────────
@@ -153,6 +180,37 @@ function wireButtons() {
     const description = document.getElementById('manualDesc').value.trim();
     if (!description) { showError('Please paste a job description.'); return; }
     startTailoring({ title, company, location: '', description, url: window.location.href });
+  });
+
+  document.getElementById('createAccountBtn').addEventListener('click', async () => {
+    const tabId = currentJob?.authTabId;
+    if (!tabId) return;
+
+    // Flag for content script to auto-fill when it lands on the register page
+    await chrome.storage.session.set({ pendingIndeedAuth: true });
+
+    const platform = (currentJob?.authPlatform || '').toLowerCase();
+    const msgType = platform.includes('indeed') ? 'CREATE_INDEED_ACCOUNT' : 'CREATE_ACCOUNT';
+
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: msgType });
+    } catch {
+      // Page may navigate — content script will auto-fill via pendingIndeedAuth flag
+    }
+  });
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const tabId = currentJob?.authTabId;
+    if (!tabId) return;
+
+    await chrome.storage.session.set({ pendingIndeedAuth: true });
+
+    const platform = (currentJob?.authPlatform || '').toLowerCase();
+    const msgType = platform.includes('indeed') ? 'LOGIN_INDEED' : 'FILL_AUTH_FORM';
+
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: msgType, formType: 'login' });
+    } catch { /* page may navigate */ }
   });
 
   document.getElementById('tailorBtn').addEventListener('click', () => {

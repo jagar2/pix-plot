@@ -44,6 +44,15 @@
     <button id="tailorBtn" class="btn primary mt12">✨ Tailor &amp; Preview</button>
   </div>
 
+  <!-- State: needs account / login -->
+  <div id="stateNeedsAuth" class="pane hidden">
+    <div class="auth-icon">🔐</div>
+    <p id="authPrompt" class="hint center"></p>
+    <button id="createAccountBtn" class="btn primary mt10">Create Account</button>
+    <button id="loginBtn" class="btn secondary mt6">Sign In (already have one)</button>
+    <p class="hint center mt8" style="font-size:11px">Credentials are filled from your saved profile &amp; account password in Settings.</p>
+  </div>
+
   <!-- State: tailoring in progress -->
   <div id="stateTailoring" class="pane hidden">
     <div class="spinner"></div>
