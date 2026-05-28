@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Job Application Agent</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <span class="logo">🎯 Job Agent</span>
+    <button id="optionsBtn" class="icon-btn" title="Settings">⚙</button>
+  </header>
+
+  <!-- State: not on a supported page -->
+  <div id="stateIdle" class="pane">
+    <div class="empty-icon">🔍</div>
+    <p class="hint">Navigate to an <strong>Indeed</strong> job listing or a company career page (<strong>Greenhouse</strong>, <strong>Lever</strong>, <strong>Workday</strong>, <strong>Ashby</strong>) to get started.</p>
+    <button id="pasteJobBtn" class="btn secondary mt8">Paste job description manually</button>
+  </div>
+
+  <!-- State: manual paste fallback -->
+  <div id="statePaste" class="pane hidden">
+    <label class="field-label">Job Title</label>
+    <input id="manualTitle" type="text" placeholder="e.g. Senior Engineer" class="input">
+    <label class="field-label">Company</label>
+    <input id="manualCompany" type="text" placeholder="e.g. Acme Corp" class="input">
+    <label class="field-label">Job Description</label>
+    <textarea id="manualDesc" rows="7" placeholder="Paste the full job description here..." class="input"></textarea>
+    <button id="manualTailorBtn" class="btn primary mt8">✨ Tailor for this role</button>
+    <button id="cancelPasteBtn" class="btn ghost mt4">Cancel</button>
+  </div>
+
+  <!-- State: job detected -->
+  <div id="stateDetected" class="pane hidden">
+    <div class="job-card">
+      <div id="jobTitle" class="job-title"></div>
+      <div id="jobCompany" class="job-meta"></div>
+      <div id="jobLocation" class="job-meta muted"></div>
+      <div id="applyType" class="badge mt6"></div>
+    </div>
+    <button id="tailorBtn" class="btn primary mt12">✨ Tailor &amp; Preview</button>
+  </div>
+
+  <!-- State: tailoring in progress -->
+  <div id="stateTailoring" class="pane hidden">
+    <div class="spinner"></div>
+    <p class="hint center">Claude is tailoring your resume<br>and writing a cover letter…</p>
+  </div>
+
+  <!-- State: tailored, ready to fill -->
+  <div id="stateReady" class="pane hidden">
+    <div class="fit-row">
+      <span class="fit-label">Fit score</span>
+      <span id="fitScore" class="fit-score"></span>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="resume">Resume</button>
+      <button class="tab-btn" data-tab="cover">Cover Letter</button>
+    </div>
+    <div id="tabResume" class="tab-pane">
+      <textarea id="resumeText" class="preview-area" rows="9"></textarea>
+      <button class="copy-btn" data-target="resumeText">Copy</button>
+    </div>
+    <div id="tabCover" class="tab-pane hidden">
+      <textarea id="coverText" class="preview-area" rows="9"></textarea>
+      <button class="copy-btn" data-target="coverText">Copy</button>
+    </div>
+    <button id="fillBtn" class="btn primary mt10">🖊 Fill Application Form</button>
+  </div>
+
+  <!-- State: form filled -->
+  <div id="stateDone" class="pane hidden">
+    <div class="success-icon">✅</div>
+    <p class="hint center">Form filled! Review the fields in the browser window, then click <strong>Submit</strong>.</p>
+    <button id="resetBtn" class="btn ghost mt8">Start over</button>
+  </div>
+
+  <!-- State: error -->
+  <div id="stateError" class="pane hidden">
+    <div class="error-icon">⚠</div>
+    <p id="errorMsg" class="error-text"></p>
+    <button id="errorResetBtn" class="btn ghost mt8">Try again</button>
+  </div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Job Application Agent",
+  "version": "1.0.0",
+  "description": "AI-powered job application assistant. Tailors your resume and cover letter for each job, then fills the application form automatically.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "https://www.indeed.com/*",
+    "https://indeed.com/*",
+    "https://boards.greenhouse.io/*",
+    "https://jobs.lever.co/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://jobs.ashbyhq.com/*",
+    "https://*.taleo.net/*",
+    "https://api.anthropic.com/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Job Application Agent"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["https://www.indeed.com/*", "https://indeed.com/*"],
+      "js": ["content_scripts/common.js", "content_scripts/indeed.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://boards.greenhouse.io/*"],
+      "js": ["content_scripts/common.js", "content_scripts/greenhouse.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://jobs.lever.co/*"],
+      "js": ["content_scripts/common.js", "content_scripts/lever.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.myworkdayjobs.com/*"],
+      "js": ["content_scripts/common.js", "content_scripts/workday.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://jobs.ashbyhq.com/*"],
+      "js": ["content_scripts/common.js", "content_scripts/ashby.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Job Agent — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🎯 Job Agent Settings</h1>
+    <span id="saveStatus" class="save-status"></span>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="profile">Profile</button>
+    <button class="tab-btn" data-tab="resume">Resume</button>
+    <button class="tab-btn" data-tab="cover">Cover Letter</button>
+    <button class="tab-btn" data-tab="api">API Key</button>
+    <button class="tab-btn" data-tab="log">Application Log</button>
+  </nav>
+
+  <!-- Profile -->
+  <section id="tabProfile" class="tab-pane">
+    <h2>Your Information</h2>
+    <p class="desc">Used to auto-fill application forms. Never shared except to fill your own forms.</p>
+    <div class="grid2">
+      <div class="field">
+        <label>Full Name *</label>
+        <input id="fullName" type="text" placeholder="Jane Doe">
+      </div>
+      <div class="field">
+        <label>Phone *</label>
+        <input id="phone" type="tel" placeholder="(555) 000-0000">
+      </div>
+      <div class="field">
+        <label>Email *</label>
+        <input id="email" type="email" placeholder="jane@example.com">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input id="location" type="text" placeholder="New York, NY">
+      </div>
+      <div class="field">
+        <label>LinkedIn URL</label>
+        <input id="linkedin" type="url" placeholder="https://linkedin.com/in/...">
+      </div>
+      <div class="field">
+        <label>Portfolio / Website</label>
+        <input id="portfolio" type="url" placeholder="https://yoursite.com">
+      </div>
+    </div>
+    <div class="field full">
+      <label>Years of Experience</label>
+      <input id="yearsExp" type="number" min="0" max="50" placeholder="5" style="width:80px">
+    </div>
+  </section>
+
+  <!-- Resume -->
+  <section id="tabResume" class="tab-pane hidden">
+    <h2>Base Resume</h2>
+    <p class="desc">Paste your resume here. Claude will tailor a copy for each job — your original is never modified.</p>
+    <textarea id="resumeText" rows="24" placeholder="Paste your full resume text here..."></textarea>
+    <p class="hint">Tip: plain text works best. Avoid tables and columns.</p>
+  </section>
+
+  <!-- Cover Letter -->
+  <section id="tabCover" class="tab-pane hidden">
+    <h2>Cover Letter Template</h2>
+    <p class="desc">Paste a sample cover letter or notes about your background. Claude uses this as context to write tailored letters from scratch.</p>
+    <textarea id="coverText" rows="18" placeholder="Dear Hiring Manager,&#10;&#10;[Your sample cover letter or background notes here...]&#10;&#10;Sincerely,&#10;Jane Doe"></textarea>
+  </section>
+
+  <!-- API Key -->
+  <section id="tabApi" class="tab-pane hidden">
+    <h2>Claude API Key</h2>
+    <p class="desc">Required for resume tailoring and cover letter generation. Your key is stored locally in Chrome and never leaves your browser except to call the Anthropic API directly.</p>
+    <div class="field">
+      <label>Anthropic API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+    </div>
+    <p class="hint">Get your API key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </section>
+
+  <!-- Application Log -->
+  <section id="tabLog" class="tab-pane hidden">
+    <div class="log-header">
+      <h2>Application Log</h2>
+      <button id="clearLogBtn" class="btn danger small">Clear log</button>
+    </div>
+    <div id="logTable">
+      <p class="hint">No applications logged yet.</p>
+    </div>
+  </section>
+
+  <footer>
+    <button id="saveBtn" class="btn primary">Save Settings</button>
+  </footer>
+</div>
+<script src="options.js"></script>
+</body>
+</html>

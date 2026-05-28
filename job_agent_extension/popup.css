@@ -1,0 +1,173 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 380px;
+  min-height: 180px;
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1a1a2e;
+  background: #fff;
+}
+
+#app { display: flex; flex-direction: column; }
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid #e8e8f0;
+  background: #f7f7fb;
+}
+.logo { font-weight: 700; font-size: 14px; letter-spacing: -.2px; }
+.icon-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; opacity: .6; padding: 2px 4px;
+}
+.icon-btn:hover { opacity: 1; }
+
+/* Panes */
+.pane { padding: 16px 14px; }
+.hidden { display: none !important; }
+
+/* Idle / empty */
+.empty-icon { font-size: 32px; text-align: center; margin-bottom: 10px; }
+.hint { font-size: 12px; color: #555; line-height: 1.6; }
+.hint.center { text-align: center; }
+
+/* Job card */
+.job-card {
+  background: #f7f7fb;
+  border: 1px solid #e4e4f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.job-title { font-weight: 600; font-size: 14px; }
+.job-meta { font-size: 12px; color: #555; margin-top: 2px; }
+.muted { color: #888; }
+
+/* Badge */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.badge.external { background: #dcfce7; color: #166534; }
+.badge.easy-apply { background: #ede9fe; color: #6d28d9; }
+
+/* Fit score */
+.fit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.fit-label { font-size: 12px; color: #555; }
+.fit-score {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #dcfce7;
+  color: #166534;
+}
+.fit-score.medium { background: #fef9c3; color: #854d0e; }
+.fit-score.low { background: #fee2e2; color: #991b1b; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e4e4f0;
+  border-radius: 6px;
+  background: #f7f7fb;
+  cursor: pointer;
+  color: #555;
+}
+.tab-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+
+/* Preview textarea */
+.preview-area {
+  width: 100%;
+  resize: vertical;
+  font: 11px/1.5 "Menlo", "Consolas", monospace;
+  border: 1px solid #e4e4f0;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafafa;
+  color: #1a1a2e;
+}
+.copy-btn {
+  margin-top: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+  float: right;
+}
+.copy-btn:hover { background: #f3f4f6; }
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 7px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.btn.primary { background: #1d4ed8; color: #fff; }
+.btn.primary:hover { background: #1e40af; }
+.btn.secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.btn.secondary:hover { background: #e5e7eb; }
+.btn.ghost { background: none; color: #6b7280; font-weight: 400; }
+.btn.ghost:hover { color: #374151; }
+
+/* Spinner */
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #e4e4f0;
+  border-top-color: #1d4ed8;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 12px auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Done / error */
+.success-icon, .error-icon { font-size: 36px; text-align: center; margin-bottom: 8px; }
+.error-text { font-size: 12px; color: #991b1b; line-height: 1.6; }
+
+/* Inputs */
+.field-label { font-size: 11px; font-weight: 600; color: #555; display: block; margin: 8px 0 3px; }
+.input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #1a1a2e;
+  background: #fff;
+}
+.input:focus { outline: 2px solid #1d4ed8; border-color: #1d4ed8; }
+textarea.input { resize: vertical; }
+
+/* Spacing utilities */
+.mt4 { margin-top: 4px; }
+.mt6 { margin-top: 6px; }
+.mt8 { margin-top: 8px; }
+.mt10 { margin-top: 10px; }
+.mt12 { margin-top: 12px; }
