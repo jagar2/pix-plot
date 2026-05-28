@@ -1,0 +1,26 @@
+YOUR NAME
+your.email@example.com | (555) 000-0000 | City, State | linkedin.com/in/yourprofile
+
+SUMMARY
+[2-3 sentence professional summary highlighting your core expertise and value proposition]
+
+EXPERIENCE
+
+[Job Title] | [Company Name] | [Start Date] – [End Date]
+- [Achievement with measurable impact, e.g., "Reduced deployment time by 40% by implementing CI/CD pipeline"]
+- [Achievement with measurable impact]
+- [Achievement with measurable impact]
+
+[Job Title] | [Company Name] | [Start Date] – [End Date]
+- [Achievement with measurable impact]
+- [Achievement with measurable impact]
+
+SKILLS
+[Skill Category]: [Skill 1], [Skill 2], [Skill 3]
+[Skill Category]: [Skill 1], [Skill 2], [Skill 3]
+
+EDUCATION
+[Degree] in [Field] | [University] | [Year]
+
+CERTIFICATIONS (optional)
+- [Certification Name] — [Issuing Body], [Year]
